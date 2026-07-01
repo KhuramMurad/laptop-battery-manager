@@ -1,0 +1,256 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import font as tkfont
+
+THRESHOLD_FILE = "/sys/class/power_supply/BAT1/charge_control_end_threshold"
+
+class BatteryThresholdManagerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Battery Threshold Manager")
+        self.root.geometry("420x350")
+        self.root.resizable(False, False)
+        
+        # Color Palette - Modern Premium Dark Mode
+        self.colors = {
+            "bg": "#1F2937",          # Dark Slate Grey
+            "card_bg": "#111827",     # Deep Charcoal
+            "text": "#F9FAFB",        # White/Slate-50
+            "text_muted": "#9CA3AF",  # Muted Grey/Slate-400
+            "btn_70": "#0D9488",      # Teal Accent
+            "btn_70_hover": "#14B8A6",
+            "btn_100": "#059669",     # Emerald Accent
+            "btn_100_hover": "#10B981",
+            "btn_refresh": "#4B5563",  # Cool Grey Accent
+            "btn_refresh_hover": "#6B7280",
+            "border": "#374151"       # Border Grey
+        }
+        
+        self.root.configure(bg=self.colors["bg"])
+        
+        # Define Fonts
+        self.title_font = tkfont.Font(family="Helvetica", size=16, weight="bold")
+        self.label_font = tkfont.Font(family="Helvetica", size=10, weight="normal")
+        self.value_font = tkfont.Font(family="Helvetica", size=32, weight="bold")
+        self.btn_font = tkfont.Font(family="Helvetica", size=11, weight="bold")
+        self.status_font = tkfont.Font(family="Helvetica", size=9, slant="italic")
+        
+        # Set up GUI Layout
+        self.setup_ui()
+        self.refresh_threshold()
+
+    def setup_ui(self):
+        # Top Header
+        header_frame = tk.Frame(self.root, bg=self.colors["bg"], pady=15)
+        header_frame.pack(fill=tk.X)
+        
+        title_label = tk.Label(
+            header_frame, 
+            text="Battery Threshold Manager", 
+            fg=self.colors["text"], 
+            bg=self.colors["bg"],
+            font=self.title_font
+        )
+        title_label.pack()
+        
+        subtitle_label = tk.Label(
+            header_frame,
+            text="Securely configure battery charge limits",
+            fg=self.colors["text_muted"],
+            bg=self.colors["bg"],
+            font=self.label_font
+        )
+        subtitle_label.pack(pady=(2, 0))
+
+        # Main Info Card Frame (Current Status Display)
+        self.card = tk.Frame(
+            self.root, 
+            bg=self.colors["card_bg"], 
+            bd=1, 
+            highlightbackground=self.colors["border"],
+            highlightthickness=1
+        )
+        self.card.pack(fill=tk.X, padx=20, pady=10)
+        
+        info_label = tk.Label(
+            self.card,
+            text="CURRENT CHARGE LIMIT",
+            fg=self.colors["text_muted"],
+            bg=self.colors["card_bg"],
+            font=self.label_font
+        )
+        info_label.pack(pady=(12, 0))
+        
+        self.value_label = tk.Label(
+            self.card,
+            text="--",
+            fg=self.colors["text"],
+            bg=self.colors["card_bg"],
+            font=self.value_font
+        )
+        self.value_label.pack(pady=(5, 12))
+
+        # Action Buttons Frame
+        btn_frame = tk.Frame(self.root, bg=self.colors["bg"])
+        btn_frame.pack(fill=tk.X, padx=20, pady=15)
+        
+        # Configure grid column weights
+        btn_frame.columnconfigure(0, weight=1)
+        btn_frame.columnconfigure(1, weight=1)
+        
+        self.btn_set_70 = tk.Button(
+            btn_frame,
+            text="Limit to 70%",
+            font=self.btn_font,
+            fg="#FFFFFF",
+            bg=self.colors["btn_70"],
+            activeforeground="#FFFFFF",
+            activebackground=self.colors["btn_70_hover"],
+            bd=0,
+            padx=10,
+            pady=8,
+            cursor="hand2",
+            command=lambda: self.set_threshold(70)
+        )
+        self.btn_set_70.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+        self.btn_set_70.bind("<Enter>", lambda e: self.on_hover(self.btn_set_70, self.colors["btn_70_hover"]))
+        self.btn_set_70.bind("<Leave>", lambda e: self.on_leave(self.btn_set_70, self.colors["btn_70"]))
+
+        self.btn_set_100 = tk.Button(
+            btn_frame,
+            text="Limit to 100%",
+            font=self.btn_font,
+            fg="#FFFFFF",
+            bg=self.colors["btn_100"],
+            activeforeground="#FFFFFF",
+            activebackground=self.colors["btn_100_hover"],
+            bd=0,
+            padx=10,
+            pady=8,
+            cursor="hand2",
+            command=lambda: self.set_threshold(100)
+        )
+        self.btn_set_100.grid(row=0, column=1, padx=(5, 0), sticky="ew")
+        self.btn_set_100.bind("<Enter>", lambda e: self.on_hover(self.btn_set_100, self.colors["btn_100_hover"]))
+        self.btn_set_100.bind("<Leave>", lambda e: self.on_leave(self.btn_set_100, self.colors["btn_100"]))
+        
+        # Refresh and Secondary Actions
+        action_subframe = tk.Frame(self.root, bg=self.colors["bg"])
+        action_subframe.pack(fill=tk.X, padx=20, pady=(0, 10))
+        
+        self.btn_refresh = tk.Button(
+            action_subframe,
+            text="↻ Refresh Status",
+            font=self.label_font,
+            fg=self.colors["text"],
+            bg=self.colors["btn_refresh"],
+            activeforeground=self.colors["text"],
+            activebackground=self.colors["btn_refresh_hover"],
+            bd=0,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            command=self.refresh_threshold
+        )
+        self.btn_refresh.pack(side=tk.RIGHT)
+        self.btn_refresh.bind("<Enter>", lambda e: self.on_hover(self.btn_refresh, self.colors["btn_refresh_hover"]))
+        self.btn_refresh.bind("<Leave>", lambda e: self.on_leave(self.btn_refresh, self.colors["btn_refresh"]))
+
+        # Status Bar
+        self.status_var = tk.StringVar()
+        self.status_var.set("Ready")
+        self.status_bar = tk.Label(
+            self.root,
+            textvariable=self.status_var,
+            font=self.status_font,
+            fg=self.colors["text_muted"],
+            bg=self.colors["bg"],
+            anchor="w",
+            padx=10,
+            pady=5
+        )
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def on_hover(self, button, hover_color):
+        button.configure(bg=hover_color)
+
+    def on_leave(self, button, normal_color):
+        button.configure(bg=normal_color)
+
+    def update_status(self, text):
+        self.status_var.set(text)
+        self.root.update_idletasks()
+
+    def refresh_threshold(self):
+        self.update_status("Reading current battery threshold...")
+        if not os.path.exists(THRESHOLD_FILE):
+            self.value_label.configure(text="N/A", fg="#EF4444")
+            self.update_status("Error: BAT1 threshold file not found.")
+            messagebox.showerror(
+                "System Error", 
+                f"Battery threshold control file not found at:\n{THRESHOLD_FILE}\n\nIs this system supported or is the battery driver loaded?"
+            )
+            return
+        
+        try:
+            with open(THRESHOLD_FILE, "r") as f:
+                value = f.read().strip()
+                if value:
+                    self.value_label.configure(text=f"{value}%", fg=self.colors["text"])
+                    self.update_status(f"Currently configured limit: {value}%")
+                else:
+                    self.value_label.configure(text="Empty", fg="#F59E0B")
+                    self.update_status("Warning: Threshold file is empty.")
+        except Exception as e:
+            self.value_label.configure(text="Error", fg="#EF4444")
+            self.update_status(f"Error reading file: {str(e)}")
+            messagebox.showerror("Error", f"Failed to read threshold file:\n{str(e)}")
+
+    def set_threshold(self, value):
+        self.update_status(f"Requesting authorization to set limit to {value}%...")
+        
+        # Build pkexec bash command to echo limit to target file
+        cmd = [
+            "pkexec", "bash", "-c", 
+            f"echo {value} > {THRESHOLD_FILE}"
+        ]
+        
+        try:
+            # We run subprocess.run without shell=True to pass arguments safely
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if res.returncode == 0:
+                self.update_status(f"Successfully updated threshold to {value}%!")
+                messagebox.showinfo("Success", f"Battery threshold successfully set to {value}%.")
+                self.refresh_threshold()
+            else:
+                stderr_msg = res.stderr.strip()
+                self.update_status("Authorization failed or write cancelled.")
+                if "Authentication is required" in stderr_msg or not stderr_msg:
+                    messagebox.showwarning(
+                        "Action Cancelled",
+                        "The operation was cancelled or authentication failed."
+                    )
+                else:
+                    messagebox.showerror(
+                        "Execution Error", 
+                        f"Failed to set battery threshold:\n{stderr_msg}"
+                    )
+                self.refresh_threshold()
+                
+        except Exception as e:
+            self.update_status(f"Command execution error: {str(e)}")
+            messagebox.showerror("Error", f"Failed to launch pkexec command:\n{str(e)}")
+            self.refresh_threshold()
+
+def main():
+    root = tk.Tk()
+    app = BatteryThresholdManagerApp(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()

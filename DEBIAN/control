@@ -1,0 +1,9 @@
+Package: battery-threshold-manager
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Ubuntu User <user@ubuntu.com>
+Depends: python3, python3-tk, policykit-1
+Description: Battery Threshold Manager
+ A graphical utility to manage battery charge threshold limits.

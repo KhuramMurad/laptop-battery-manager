@@ -1,0 +1,13 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Debian package build outputs (if any)
+*.deb
+
+# System / Editor files
+.DS_Store
+*~
+*.swp

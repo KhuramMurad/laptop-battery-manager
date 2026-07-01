@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Battery Threshold Manager
+Comment=Manage battery charge thresholds
+Exec=/usr/bin/battery-threshold-manager
+Icon=battery
+Terminal=false
+Type=Application
+Categories=System;Settings;HardwareSettings;
+Keywords=battery;charge;limit;threshold;control;
