@@ -50,6 +50,9 @@ class BatteryThresholdManagerApp:
             self.setup_incompatible_ui()
 
     def detect_compatibility(self):
+        if sys.platform == "win32":
+            return None, ["Windows (Unsupported Platform)"]
+
         base_dir = "/sys/class/power_supply"
         if not os.path.exists(base_dir):
             return None, []
@@ -109,7 +112,7 @@ class BatteryThresholdManagerApp:
         
         warning_title = tk.Label(
             error_card,
-            text="System Incompatible",
+            text="System Incompatible" if sys.platform != "win32" else "Platform Unsupported",
             font=tkfont.Font(family="Helvetica", size=14, weight="bold"),
             fg="#EF4444",
             bg=self.colors["card_bg"]
@@ -117,12 +120,19 @@ class BatteryThresholdManagerApp:
         warning_title.pack(pady=(0, 10))
         
         # Details message
-        details_text = (
-            "Your system does not support kernel-level battery charge thresholds natively.\n\n"
-            "We checked for the control file under:\n"
-            "/sys/class/power_supply/BAT*/charge_control_end_threshold\n\n"
-            "This control is required to set charging limits."
-        )
+        if sys.platform == "win32":
+            details_text = (
+                "Battery Threshold Manager is designed for Linux systems using kernel-level battery charge controls.\n\n"
+                "Windows is not supported because it lacks standard /sys/class/power_supply interfaces.\n\n"
+                "Please use your laptop manufacturer's software (e.g., Lenovo Vantage, MyASUS, Dell Power Manager) to configure battery limits on Windows."
+            )
+        else:
+            details_text = (
+                "Your system does not support kernel-level battery charge thresholds natively.\n\n"
+                "We checked for the control file under:\n"
+                "/sys/class/power_supply/BAT*/charge_control_end_threshold\n\n"
+                "This control is required to set charging limits."
+            )
         
         details_label = tk.Label(
             error_card,

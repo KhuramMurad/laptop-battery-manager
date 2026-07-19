@@ -7,6 +7,14 @@ __pycache__/
 # Debian package build outputs (if any)
 *.deb
 
+# RPM build outputs
+rpmbuild/
+*.rpm
+
+# Windows build outputs
+*.exe
+assets/icon.ico
+
 # System / Editor files
 .DS_Store
 *~

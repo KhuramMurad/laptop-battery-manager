@@ -21,22 +21,45 @@ This project is laid out in the standard Debian package source format:
 - `usr/share/applications/` - Desktop launcher configuration (`.desktop`)
 - `usr/share/polkit-1/actions/` - Polkit policy configuration XML for secure root access
 
-## How to Build the Package
+## How to Build the Packages
 
+### Debian/Ubuntu (.deb)
 To compile this project into a `.deb` package:
-
 ```bash
 dpkg-deb --build . ../battery-threshold-manager_1.0.0_all.deb
 ```
 
-## How to Install the Package
+### Fedora/RHEL (.rpm)
+To compile this project into an `.rpm` package:
+```bash
+mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+rpmbuild --define "_topdir $PWD/rpmbuild" --define "_sourcedir $PWD" -bb battery-threshold-manager.spec
+```
 
+### Windows (.exe installer)
+To compile the Windows installer (requires `nsis` / `makensis`):
+```bash
+convert -background none -resize 256x256 assets/icon.svg assets/icon.ico
+makensis installer.nsi
+```
+
+## How to Install the Packages
+
+### Debian/Ubuntu (.deb)
 Install the generated `.deb` package using `apt`:
-
 ```bash
 sudo apt update
 sudo apt install ../battery-threshold-manager_1.0.0_all.deb
 ```
+
+### Fedora/RHEL (.rpm)
+Install the generated `.rpm` package using `dnf` or `rpm`:
+```bash
+sudo dnf localinstall rpmbuild/RPMS/noarch/battery-threshold-manager-1.0.0-1.noarch.rpm
+```
+
+### Windows (.exe installer)
+Run the generated `battery-threshold-manager-setup.exe` installer and follow the wizard. *(Note: When run on Windows, the application will display a Platform Unsupported screen as sysfs is Linux-only).*
 
 ## License
 
