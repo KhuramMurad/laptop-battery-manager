@@ -21,8 +21,8 @@ class BatteryThresholdManagerApp:
             "card_bg": "#111827",     # Deep Charcoal
             "text": "#F9FAFB",        # White/Slate-50
             "text_muted": "#9CA3AF",  # Muted Grey/Slate-400
-            "btn_70": "#0D9488",      # Teal Accent
-            "btn_70_hover": "#14B8A6",
+            "btn_80": "#0D9488",      # Teal Accent
+            "btn_80_hover": "#14B8A6",
             "btn_100": "#059669",     # Emerald Accent
             "btn_100_hover": "#10B981",
             "btn_refresh": "#4B5563",  # Cool Grey Accent
@@ -102,23 +102,23 @@ class BatteryThresholdManagerApp:
         btn_frame.columnconfigure(0, weight=1)
         btn_frame.columnconfigure(1, weight=1)
         
-        self.btn_set_70 = tk.Button(
+        self.btn_set_80 = tk.Button(
             btn_frame,
-            text="Limit to 70%",
+            text="Limit to 80%",
             font=self.btn_font,
             fg="#FFFFFF",
-            bg=self.colors["btn_70"],
+            bg=self.colors["btn_80"],
             activeforeground="#FFFFFF",
-            activebackground=self.colors["btn_70_hover"],
+            activebackground=self.colors["btn_80_hover"],
             bd=0,
             padx=10,
             pady=8,
             cursor="hand2",
-            command=lambda: self.set_threshold(70)
+            command=lambda: self.set_threshold(80)
         )
-        self.btn_set_70.grid(row=0, column=0, padx=(0, 5), sticky="ew")
-        self.btn_set_70.bind("<Enter>", lambda e: self.on_hover(self.btn_set_70, self.colors["btn_70_hover"]))
-        self.btn_set_70.bind("<Leave>", lambda e: self.on_leave(self.btn_set_70, self.colors["btn_70"]))
+        self.btn_set_80.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+        self.btn_set_80.bind("<Enter>", lambda e: self.on_hover(self.btn_set_80, self.colors["btn_80_hover"]))
+        self.btn_set_80.bind("<Leave>", lambda e: self.on_leave(self.btn_set_80, self.colors["btn_80"]))
 
         self.btn_set_100 = tk.Button(
             btn_frame,
@@ -227,6 +227,20 @@ class BatteryThresholdManagerApp:
                 self.update_status(f"Successfully updated threshold to {value}%!")
                 messagebox.showinfo("Success", f"Battery threshold successfully set to {value}%.")
                 self.refresh_threshold()
+                
+                # Check if the change didn't reflect immediately in sysfs
+                try:
+                    with open(THRESHOLD_FILE, "r") as f:
+                        current = f.read().strip()
+                    if current != str(value):
+                        messagebox.showinfo(
+                            "Hardware Notice",
+                            f"The limit was successfully set to {value}%, but your laptop's hardware is still reporting {current}%.\n\n"
+                            f"This is normal for many laptops (including Toshiba). The new limit will not be active or shown until you unplug the charger, discharge the battery below {value}%, and plug it back in."
+                        )
+                        self.update_status(f"Limit set to {value}% (pending battery discharge below {value}%)")
+                except Exception:
+                    pass
             else:
                 stderr_msg = res.stderr.strip()
                 self.update_status("Authorization failed or write cancelled.")
