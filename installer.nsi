@@ -37,7 +37,7 @@ Section "Install"
     SetOutPath "$INSTDIR"
     
     # Copy main python script renamed to .pyw so it runs without a console window popup
-    File /oname=battery-threshold-manager.pyw "usr/bin/battery-threshold-manager"
+    File /oname=battery-threshold-manager.pyw "battery-threshold-manager-windows.py"
     File "assets/icon.ico"
     
     # Create shortcut in the start menu

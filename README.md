@@ -17,9 +17,10 @@ Battery Threshold Manager is a clean and lightweight graphical user interface (G
 This project is laid out in the standard Debian package source format:
 
 - `DEBIAN/` - Package metadata (e.g. `control`)
-- `usr/bin/` - Main executable Python Tkinter application
+- `usr/bin/` - Main executable Python Tkinter application (Linux version)
 - `usr/share/applications/` - Desktop launcher configuration (`.desktop`)
 - `usr/share/polkit-1/actions/` - Polkit policy configuration XML for secure root access
+- `battery-threshold-manager-windows.py` - Separate executable Python Tkinter application (Windows version using native WMI/PowerShell)
 
 ## How to Build the Packages
 
@@ -59,7 +60,7 @@ sudo dnf localinstall rpmbuild/RPMS/noarch/battery-threshold-manager-1.0.0-1.noa
 ```
 
 ### Windows (.exe installer)
-Run the generated `battery-threshold-manager-setup.exe` installer and follow the wizard. *(Note: When run on Windows, the application will display a Platform Unsupported screen as sysfs is Linux-only).*
+Run the generated `battery-threshold-manager-setup.exe` installer and follow the wizard. The installer runs natively and configures battery limits via WMI / PowerShell for supported vendors (Lenovo, ASUS, Dell). UAC admin privileges are requested on launch to configure the threshold parameters.
 
 ## License
 
