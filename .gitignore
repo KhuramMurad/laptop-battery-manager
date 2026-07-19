@@ -15,9 +15,9 @@ rpmbuild/
 *.exe
 assets/icon.ico
 
-# Exclude dist folder from gitignore to track releases
-!dist/
-!dist/*
+# Exclude docs/dist folder from gitignore to track releases
+!docs/dist/
+!docs/dist/*
 
 # System / Editor files
 .DS_Store

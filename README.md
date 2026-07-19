@@ -24,10 +24,10 @@ This project is laid out in the standard Debian package source format:
 
 ## Downloads & Installation
 
-You can download the pre-built packages directly from the [dist/](file:///home/ubuntu/laptop-battery-manager/dist/) folder on GitHub instead of compiling the application yourself:
+You can download the pre-built packages directly from the [docs/dist/](file:///home/ubuntu/laptop-battery-manager/docs/dist/) folder on GitHub instead of compiling the application yourself:
 
 ### Debian/Ubuntu (.deb)
-1. Download the [battery-threshold-manager_1.0.0_all.deb](dist/battery-threshold-manager_1.0.0_all.deb) package.
+1. Download the [battery-threshold-manager_1.0.0_all.deb](docs/dist/battery-threshold-manager_1.0.0_all.deb) package.
 2. Install it using `apt`:
    ```bash
    sudo apt update
@@ -35,14 +35,14 @@ You can download the pre-built packages directly from the [dist/](file:///home/u
    ```
 
 ### Fedora/RHEL (.rpm)
-1. Download the [battery-threshold-manager-1.0.0-1.noarch.rpm](dist/battery-threshold-manager-1.0.0-1.noarch.rpm) package.
+1. Download the [battery-threshold-manager-1.0.0-1.noarch.rpm](docs/dist/battery-threshold-manager-1.0.0-1.noarch.rpm) package.
 2. Install it using `dnf`:
    ```bash
    sudo dnf localinstall battery-threshold-manager-1.0.0-1.noarch.rpm
    ```
 
 ### Windows (.exe installer)
-1. Download and run the [battery-threshold-manager-setup.exe](dist/battery-threshold-manager-setup.exe) installer.
+1. Download and run the [battery-threshold-manager-setup.exe](docs/dist/battery-threshold-manager-setup.exe) installer.
 2. Follow the setup wizard. The application configures battery limits via WMI / PowerShell for supported vendors (Lenovo, ASUS, Dell). UAC admin privileges are requested on launch to modify threshold parameters.
 
 ---
