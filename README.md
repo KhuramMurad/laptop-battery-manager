@@ -1,7 +1,7 @@
 # Battery Threshold Manager
 
 <p align="center">
-  <img src="assets/icon.png" width="160" height="160" alt="Battery Threshold Manager Icon">
+  <img src="assets/icon.svg" width="160" height="160" alt="Battery Threshold Manager Icon">
 </p>
 
 Battery Threshold Manager is a clean and lightweight graphical user interface (GUI) written in Python 3 using Tkinter for Ubuntu/Debian-based systems. It allows users to manage battery charge threshold limits safely and securely.
