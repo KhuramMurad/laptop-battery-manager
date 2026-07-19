@@ -4,8 +4,8 @@ Battery Threshold Manager is a clean and lightweight graphical user interface (G
 
 ## Features
 
-- **Real-time Status**: Reads and displays the current charge end threshold from `/sys/class/power_supply/BAT1/charge_control_end_threshold`.
-- **Predefined Limits**: Quickly toggle between a 70% limit (to maximize battery health when plugged in) and a 100% limit (for full capacity).
+- **Dynamic Compatibility Check**: Scans `/sys/class/power_supply` on startup for battery control threshold compatibility, dynamically using the correct interface (e.g. `BAT0`, `BAT1`), and displays detailed diagnostic reports if unsupported.
+- **Predefined Limits**: Quickly toggle between an 80% limit (to maximize battery health when plugged in) and a 100% limit (for full capacity).
 - **Secure Elevation**: Uses `pkexec` (Polkit/PolicyKit) natively for root operations, meaning only write actions require password authorization, while the rest of the GUI runs under standard user privileges.
 
 ## Directory Structure
