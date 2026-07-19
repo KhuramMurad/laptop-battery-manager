@@ -6,13 +6,13 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import font as tkfont
 
-THRESHOLD_FILE = "/sys/class/power_supply/BAT1/charge_control_end_threshold"
+# Default fall-back path, but we detect dynamically
+DEFAULT_THRESHOLD_FILE = "/sys/class/power_supply/BAT1/charge_control_end_threshold"
 
 class BatteryThresholdManagerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Battery Threshold Manager")
-        self.root.geometry("420x350")
         self.root.resizable(False, False)
         
         # Color Palette - Modern Premium Dark Mode
@@ -39,9 +39,134 @@ class BatteryThresholdManagerApp:
         self.btn_font = tkfont.Font(family="Helvetica", size=11, weight="bold")
         self.status_font = tkfont.Font(family="Helvetica", size=9, slant="italic")
         
-        # Set up GUI Layout
-        self.setup_ui()
-        self.refresh_threshold()
+        # Run compatibility verification
+        self.threshold_file, self.detected_supplies = self.detect_compatibility()
+        
+        if self.threshold_file:
+            self.root.geometry("420x350")
+            self.setup_ui()
+            self.refresh_threshold()
+        else:
+            self.setup_incompatible_ui()
+
+    def detect_compatibility(self):
+        base_dir = "/sys/class/power_supply"
+        if not os.path.exists(base_dir):
+            return None, []
+        
+        detected_supplies = []
+        try:
+            supplies = os.listdir(base_dir)
+        except Exception:
+            return None, []
+            
+        threshold_file = None
+        for supply in sorted(supplies):
+            # Track all power supply names (e.g. ADP1, BAT1) for the diagnostics log
+            detected_supplies.append(supply)
+            if supply.startswith("BAT") and not threshold_file:
+                path = os.path.join(base_dir, supply, "charge_control_end_threshold")
+                if os.path.exists(path):
+                    threshold_file = path
+                    
+        return threshold_file, detected_supplies
+
+    def setup_incompatible_ui(self):
+        self.root.geometry("450x385")
+        
+        # Top Header
+        header_frame = tk.Frame(self.root, bg=self.colors["bg"], pady=15)
+        header_frame.pack(fill=tk.X)
+        
+        title_label = tk.Label(
+            header_frame, 
+            text="Battery Threshold Manager", 
+            fg=self.colors["text"], 
+            bg=self.colors["bg"],
+            font=self.title_font
+        )
+        title_label.pack()
+        
+        # Error card
+        error_card = tk.Frame(
+            self.root, 
+            bg=self.colors["card_bg"], 
+            bd=1, 
+            highlightbackground="#EF4444", # Red border for error/incompatibility
+            highlightthickness=1
+        )
+        error_card.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        # Warning icon/title
+        warning_icon = tk.Label(
+            error_card,
+            text="⚠️",
+            font=tkfont.Font(family="Helvetica", size=32),
+            fg="#F59E0B",
+            bg=self.colors["card_bg"]
+        )
+        warning_icon.pack(pady=(15, 5))
+        
+        warning_title = tk.Label(
+            error_card,
+            text="System Incompatible",
+            font=tkfont.Font(family="Helvetica", size=14, weight="bold"),
+            fg="#EF4444",
+            bg=self.colors["card_bg"]
+        )
+        warning_title.pack(pady=(0, 10))
+        
+        # Details message
+        details_text = (
+            "Your system does not support kernel-level battery charge thresholds natively.\n\n"
+            "We checked for the control file under:\n"
+            "/sys/class/power_supply/BAT*/charge_control_end_threshold\n\n"
+            "This control is required to set charging limits."
+        )
+        
+        details_label = tk.Label(
+            error_card,
+            text=details_text,
+            font=self.label_font,
+            fg=self.colors["text"],
+            bg=self.colors["card_bg"],
+            justify=tk.CENTER,
+            wraplength=380
+        )
+        details_label.pack(padx=15, pady=5)
+        
+        # Info box / stats
+        detected_text = "Detected Power Supplies: " + (", ".join(self.detected_supplies) if self.detected_supplies else "None")
+        detected_label = tk.Label(
+            error_card,
+            text=detected_text,
+            font=tkfont.Font(family="Helvetica", size=9),
+            fg=self.colors["text_muted"],
+            bg=self.colors["card_bg"]
+        )
+        detected_label.pack(pady=(10, 15))
+        
+        # Close button
+        btn_frame = tk.Frame(self.root, bg=self.colors["bg"])
+        btn_frame.pack(fill=tk.X, padx=20, pady=(5, 15))
+        
+        btn_close = tk.Button(
+            btn_frame,
+            text="Close Application",
+            font=self.btn_font,
+            fg="#FFFFFF",
+            bg=self.colors["btn_refresh"],
+            activeforeground="#FFFFFF",
+            activebackground=self.colors["btn_refresh_hover"],
+            bd=0,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            command=self.root.destroy
+        )
+        btn_close.pack(fill=tk.X)
+        btn_close.bind("<Enter>", lambda e: self.on_hover(btn_close, self.colors["btn_refresh_hover"]))
+        btn_close.bind("<Leave>", lambda e: self.on_leave(btn_close, self.colors["btn_refresh"]))
 
     def setup_ui(self):
         # Top Header
@@ -187,17 +312,18 @@ class BatteryThresholdManagerApp:
 
     def refresh_threshold(self):
         self.update_status("Reading current battery threshold...")
-        if not os.path.exists(THRESHOLD_FILE):
+        if not self.threshold_file or not os.path.exists(self.threshold_file):
             self.value_label.configure(text="N/A", fg="#EF4444")
-            self.update_status("Error: BAT1 threshold file not found.")
+            path_display = self.threshold_file if self.threshold_file else "/sys/class/power_supply/BAT*/charge_control_end_threshold"
+            self.update_status("Error: threshold control file not found.")
             messagebox.showerror(
                 "System Error", 
-                f"Battery threshold control file not found at:\n{THRESHOLD_FILE}\n\nIs this system supported or is the battery driver loaded?"
+                f"Battery threshold control file not found at:\n{path_display}\n\nIs this system supported or is the battery driver loaded?"
             )
             return
         
         try:
-            with open(THRESHOLD_FILE, "r") as f:
+            with open(self.threshold_file, "r") as f:
                 value = f.read().strip()
                 if value:
                     self.value_label.configure(text=f"{value}%", fg=self.colors["text"])
@@ -211,12 +337,16 @@ class BatteryThresholdManagerApp:
             messagebox.showerror("Error", f"Failed to read threshold file:\n{str(e)}")
 
     def set_threshold(self, value):
+        if not self.threshold_file or not os.path.exists(self.threshold_file):
+            messagebox.showerror("Error", "No threshold control file detected.")
+            return
+
         self.update_status(f"Requesting authorization to set limit to {value}%...")
         
         # Build pkexec bash command to echo limit to target file
         cmd = [
             "pkexec", "bash", "-c", 
-            f"echo {value} > {THRESHOLD_FILE}"
+            f"echo {value} > {self.threshold_file}"
         ]
         
         try:
@@ -230,7 +360,7 @@ class BatteryThresholdManagerApp:
                 
                 # Check if the change didn't reflect immediately in sysfs
                 try:
-                    with open(THRESHOLD_FILE, "r") as f:
+                    with open(self.threshold_file, "r") as f:
                         current = f.read().strip()
                     if current != str(value):
                         messagebox.showinfo(
